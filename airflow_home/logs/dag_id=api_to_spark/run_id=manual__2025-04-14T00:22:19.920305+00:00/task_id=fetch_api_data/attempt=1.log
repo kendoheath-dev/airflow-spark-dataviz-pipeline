@@ -1,0 +1,18 @@
+[2025-04-14T00:22:26.228+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2025-04-14T00:22:26.246+0000] {taskinstance.py:2613} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: api_to_spark.fetch_api_data manual__2025-04-14T00:22:19.920305+00:00 [queued]>
+[2025-04-14T00:22:26.258+0000] {taskinstance.py:2613} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: api_to_spark.fetch_api_data manual__2025-04-14T00:22:19.920305+00:00 [queued]>
+[2025-04-14T00:22:26.259+0000] {taskinstance.py:2866} INFO - Starting attempt 1 of 1
+[2025-04-14T00:22:26.294+0000] {taskinstance.py:2889} INFO - Executing <Task(PythonOperator): fetch_api_data> on 2025-04-14 00:22:19.920305+00:00
+[2025-04-14T00:22:26.301+0000] {standard_task_runner.py:72} INFO - Started process 76 to run task
+[2025-04-14T00:22:26.304+0000] {standard_task_runner.py:104} INFO - Running: ['airflow', 'tasks', 'run', 'api_to_spark', 'fetch_api_data', 'manual__2025-04-14T00:22:19.920305+00:00', '--job-id', '303', '--raw', '--subdir', 'DAGS_FOLDER/api_to_spark.py', '--cfg-path', '/tmp/tmpww69q0t7']
+[2025-04-14T00:22:26.307+0000] {standard_task_runner.py:105} INFO - Job 303: Subtask fetch_api_data
+[2025-04-14T00:22:26.377+0000] {task_command.py:467} INFO - Running <TaskInstance: api_to_spark.fetch_api_data manual__2025-04-14T00:22:19.920305+00:00 [running]> on host 54c350dd64ee
+[2025-04-14T00:22:26.544+0000] {taskinstance.py:3132} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='api_to_spark' AIRFLOW_CTX_TASK_ID='fetch_api_data' AIRFLOW_CTX_EXECUTION_DATE='2025-04-14T00:22:19.920305+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-04-14T00:22:19.920305+00:00'
+[2025-04-14T00:22:26.546+0000] {taskinstance.py:731} INFO - ::endgroup::
+[2025-04-14T00:22:26.785+0000] {base.py:84} INFO - Retrieving connection 'postgres_staging'
+[2025-04-14T00:22:26.815+0000] {python.py:240} INFO - Done. Returned value was: None
+[2025-04-14T00:22:26.825+0000] {taskinstance.py:340} INFO - ::group::Post task execution logs
+[2025-04-14T00:22:26.825+0000] {taskinstance.py:352} INFO - Marking task as SUCCESS. dag_id=api_to_spark, task_id=fetch_api_data, run_id=manual__2025-04-14T00:22:19.920305+00:00, execution_date=20250414T002219, start_date=20250414T002226, end_date=20250414T002226
+[2025-04-14T00:22:26.861+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 0
+[2025-04-14T00:22:26.905+0000] {taskinstance.py:3895} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2025-04-14T00:22:26.911+0000] {local_task_job_runner.py:245} INFO - ::endgroup::

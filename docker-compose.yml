@@ -1,0 +1,158 @@
+services:
+  spark-master:
+    container_name: spark-master
+    build:
+      context: .
+      dockerfile: ./spark/Dockerfile.spark
+    environment:
+      SPARK_MODE: master
+      SPARK_MASTER_HOST: spark-master
+      SPARK_PORT: 7077
+      SPARK_DEPLOY_MODE: client
+      
+    ports:
+      - 7077:7077
+      - 8080:8080
+    command: /opt/bitnami/spark/bin/spark-class org.apache.spark.deploy.master.Master 
+    volumes:
+      - ./spark/src:/opt/bitnami/spark/src
+  spark-worker:
+    container_name: spark-worker
+    build:
+      context: .
+      dockerfile: ./spark/Dockerfile.spark
+    restart: always #is this needed
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 2g
+    ports:
+# since the worker connnect to the master internally on the docker network, it doesnt need to 7077 to the host
+      - 8081:8081                                                     #is this conn string correct with hyphen or under score
+    command: /opt/bitnami/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077 --webui-port 8081
+    volumes:
+      - ./spark/src:/opt/bitnami/spark/src
+    depends_on:
+      - spark-master
+
+  x-airflow-common:
+    &airflow-common
+    build:
+      context: .
+      dockerfile: ./airflow_home/Dockerfile.airflow
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW_CONN_SPARK_DEFAULT: spark://spark-master:7077
+      AIRFLOW_CONN_DATA_WAREHOUSE: postgresql://postgres:password@postgres_warehouse:5432/warehouse_db
+      # JAVA_HOME: /opt/bitnami/java
+      SPARK_MASTER_URL: spark://spark-master:7077
+    volumes:
+      - ./airflow_home:/opt/airflow
+      - ./spark/src:/opt/bitnami/spark/src/
+    depends_on: 
+      - postgres_staging
+      - spark-master
+  airflow-init:
+    <<: *airflow-common
+    command: ["airflow", "db", "init"]
+  airflow_webserver:
+    <<: *airflow-common
+    container_name: airflow_webserver
+    command: airflow webserver
+    environment:
+      AIRFLOW__WEBSERVER_RBAC: True
+    restart: always
+    ports:
+      - 8888:8080
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow_scheduler:
+    <<: *airflow-common
+    container_name: airflow_scheduler
+    command: airflow scheduler
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  postgres_staging:
+    image: postgres:latest
+    container_name: postgres_staging
+    environment: 
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: staging
+      POSTGRES_PASSWORD: staging_password
+      POSTGRES_DB: staging_db
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db/postgres_staging/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - staging_db_volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: always
+    # 
+
+  postgres_warehouse:
+    image: postgres:latest
+    container_name: postgres_warehouse
+    environment: 
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: warehouse_db
+    # 
+    ports:
+      - 5433:5432
+    volumes:
+      - ./db/postgres_warehouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - warehouse_db_volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: always
+  
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+
+    ports: 
+    - 3000:3000
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: warehouse_db
+      MB_DB_PORT: 5433
+      MB_DB_USER: postgres
+      MB_DB_PASS: password
+      MB_DB_HOST: host.docker.internal
+
+# do we need these volumes? typically these are defined for use across mmultiple services
+volumes:
+  staging_db_volume:
+  warehouse_db_volume:
+  # airflow_home:
+
+networks:
+  default:
+    name: data_pipeline_net
+  # data_pipeline:
+# here we are using a bridge network for local development/single machine host
+    # driver: bridge
+# not needed because bridge networks are attachable by default
+    # attachable: true
+
+
+
+
+
+
+
+
