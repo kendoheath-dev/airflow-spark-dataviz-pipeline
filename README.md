@@ -1,1 +1,2 @@
 # Full-Stack Stock Market Data Pipeline (Airflow, Spark, PostgreSQL, Metabase)
+Designed and implemented a star-schema data warehouse consisting of a fact table (fact_stock_prices) and two dimension tables (dim_stock, dim_date). Enforced referential integrity through foreign keys and optimized for analytical querying. Built a complete data ingestion pipeline using Airflow, Spark, Postgres, Docker, and Metabase.
