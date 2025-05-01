@@ -1,7 +1,7 @@
 
 # Full-Stack Stock Market Data Pipeline (Airflow, Spark, PostgreSQL, Metabase)
 
-Project Overview:
+## Project Overview:
 
 This project is an end-to-end data pipeline that extracts stock market data from multiple external APIs, processes and transforms it using Apache Spark, stages and warehouses the data in PostgreSQL, and visualizes insights through Metabase.
 
@@ -14,12 +14,12 @@ Designed and implemented a star-schema data warehouse consisting of a fact table
 
 Tech Stack:
 
-	•	Multiple APIs (multi-source ingestion)
-	•	Airflow (orchestration)
-	•	Spark 
-	•	Postgres staging → Postgres warehouse (proper ELT modeling)
-	•	Metabase (visualization)
-	•	Docker Compose (local infra)
+	-	Multiple APIs (multi-source ingestion)
+	-	Airflow (orchestration)
+	-	Spark 
+	-	Postgres staging → Postgres warehouse (proper ELT modeling)
+	-	Metabase (visualization)
+	-	Docker Compose (local infra)
 
  ## Pipeline Flow
 1. Airflow task pulls stock API data into staging
