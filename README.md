@@ -29,5 +29,5 @@ Tech Stack:
 
 ## How to Run
     docker-compose up --build
-Access Airflow: http://localhost:8888
-5. Access Metabase: http://localhost:3000
+- Access Airflow: http://localhost:8888
+- Access Metabase: http://localhost:3000
