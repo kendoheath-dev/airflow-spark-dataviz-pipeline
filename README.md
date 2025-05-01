@@ -14,12 +14,12 @@ Designed and implemented a star-schema data warehouse consisting of a fact table
 
 Tech Stack:
 
-Multiple APIs (multi-source ingestion)
-Airflow (orchestration)
-Spark 
-Postgres staging → Postgres warehouse (proper ELT modeling)
-Metabase (visualization)
-Docker Compose (local infra)
+- Multiple APIs (multi-source ingestion)
+- Airflow (orchestration)
+- Spark 
+- Postgres staging → Postgres warehouse (proper ELT modeling)
+- Metabase (visualization)
+- Docker Compose (local infra)
 
  ## Pipeline Flow
 1. Airflow task pulls stock API data into staging
@@ -29,5 +29,5 @@ Docker Compose (local infra)
 
 ## How to Run
     docker-compose up --build
-Access Airflow:        `http://localhost:8888`
+Access Airflow: http://localhost:8888
 5. Access Metabase: http://localhost:3000
