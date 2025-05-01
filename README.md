@@ -13,7 +13,18 @@ Tech Stack:
 
 	•	Multiple APIs (multi-source ingestion)
 	•	Airflow (orchestration)
-	•	Spark (transformation)
+	•	Spark 
 	•	Postgres staging → Postgres warehouse (proper ELT modeling)
 	•	Metabase (visualization)
 	•	Docker Compose (local infra)
+
+ ## Pipeline Flow
+1. Airflow task pulls stock API data into staging
+2. Spark job reads staging & transforms data (cleans, enriches)
+3. Spark loads to warehouse schema in PostgreSQL
+4. Metabase dashboards query the warehouse
+
+## How to Run
+1. `docker-compose up --build`
+2. Access Airflow: http://localhost:8888
+3. Access Metabase: http://localhost:3000
