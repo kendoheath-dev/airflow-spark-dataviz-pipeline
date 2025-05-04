@@ -27,9 +27,9 @@ Tech Stack:
 2. Spark job reads staging & transforms data (cleans and enriches)
 3. Spark loads data to a landing table
 4. airflow moves data from landing table to warehouse schema in PostgreSQL
-5. Metabase dashboards query the warehouse
+5. Metabase dashboards query the warehouse.
 
-![📊 View Dashboard PDF](.github/assets/dashboard.png)
+[📊 View Dashboard PDF](.github/assets/dashboard.png)
 
 ## How to Run
     docker-compose up --build
