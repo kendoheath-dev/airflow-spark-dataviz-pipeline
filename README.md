@@ -9,8 +9,7 @@ The workflow is fully orchestrated using Airflow and runs in a Dockerized enviro
 
 Data Modeling:
 
-Designed and implemented a star-schema data warehouse consisting of a fact table (fact_stock_prices) and two dimension tables (dim_stock, dim_date). Referential integrity is enforced through foreign keys and optimized for analytical querying. Built a complete data ingestion pipeline using Airflow, Spark, Postgres, Docker, and Metabase.
-
+Designed and implemented a star-schema data warehouse consisting of a fact table (fact_stock_prices) and two dimension tables (dim_stock, dim_date). Referential integrity is enforced through foreign keys and optimized for analytical querying. 
 ![Pipeline Diagram](.github/assets/pipeline-diagram.png)
 
 Tech Stack:
