@@ -11,9 +11,9 @@ Data Modeling:
 
 Designed and implemented a star-schema data warehouse consisting of a fact table (fact_stock_prices) and two dimension tables (dim_stock, dim_date). Referential integrity is enforced through foreign keys and optimized for analytical querying. Built a complete data ingestion pipeline using Airflow, Spark, Postgres, Docker, and Metabase.
 
-
+[
 https://github.com/kendoheath-dev/airflow-spark-dataviz-pipeline/issues/1#issue-3037785655
-
+](url)
 
 Tech Stack:
 
