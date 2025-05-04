@@ -3,7 +3,7 @@
 
 ## Project Overview:
 
-This project is an end-to-end data pipeline that extracts stock market data from multiple external APIs, processes and transforms it using Apache Spark, stages and warehouses the data in PostgreSQL, and visualizes insights through Metabase.
+This project is an end-to-end data pipeline that extracts stock market data from multiple external APIs, transforms and enriches it using Apache Spark, stages and warehouses the data in PostgreSQL, and visualizes insights through Metabase.
 
 The workflow is fully orchestrated using Airflow and runs in a Dockerized environment for easy deployment.
 
