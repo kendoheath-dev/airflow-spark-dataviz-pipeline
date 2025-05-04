@@ -23,11 +23,11 @@ Tech Stack:
 - Docker Compose (local infra)
 
  ## Pipeline Flow
-1. Airflow task pulls stock API data into staging zone (PostgreSQL)
+1. Airflow DAG extracts raw company and financial data from two different APIs into staging zone (PostgreSQL).
 2. Spark job reads staging & transforms data (cleans and enriches)
 3. Spark loads data to a landing table
-4. airflow moves data from landing table to warehouse schema in PostgreSQL
-5. Metabase dashboards query the warehouse.
+4. airflow moves data from landing table to warehouse schema in PostgreSQL populating final “fact tables” and “dimension tables”
+5. Metabase connects directly to the warehouse to create dashboards: trends, stock performance analytics, volatility insights, etc.
 
 ![📊 View Dashboard PDF](.github/assets/dashboard.png)
 
