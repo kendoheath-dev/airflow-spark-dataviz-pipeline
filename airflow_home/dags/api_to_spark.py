@@ -146,7 +146,7 @@ with DAG(
 # Step 1: Extract Data from API to Staging        
         fetch_tasks = []
         # symbols = ["TSLA", "AAPL", "IBM"]           
-        symbols = ["TSLA"]           
+        symbols = ["IBM"]           
         for symbol in symbols:
             extract_task = PythonOperator(
                 task_id=f"fetch_{symbol.lower()}_data",
