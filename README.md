@@ -29,7 +29,7 @@ Tech Stack:
 4. airflow moves data from landing table to warehouse schema in PostgreSQL
 5. Metabase dashboards query the warehouse.
 
-[📊 View Dashboard PDF](.github/assets/dashboard.png)
+![📊 View Dashboard PDF](.github/assets/dashboard.png)
 
 ## How to Run
     docker-compose up --build
