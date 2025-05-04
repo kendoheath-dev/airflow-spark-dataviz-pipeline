@@ -12,7 +12,6 @@ Data Modeling:
 Designed and implemented a star-schema data warehouse consisting of a fact table (fact_stock_prices) and two dimension tables (dim_stock, dim_date). Referential integrity is enforced through foreign keys and optimized for analytical querying. 
 ![Pipeline Diagram](.github/assets/pipeline-diagram.png)
 
-[📊 View Dashboard PDF](.github/assets/dashboard.pdf)
 
 Tech Stack:
 
@@ -30,7 +29,7 @@ Tech Stack:
 4. airflow moves data from landing table to warehouse schema in PostgreSQL
 5. Metabase dashboards query the warehouse
 
-[📊 View Dashboard PDF](.github/assets/dashboard.png)
+![📊 View Dashboard PDF](.github/assets/dashboard.png)
 
 ## How to Run
     docker-compose up --build
