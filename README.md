@@ -12,20 +12,24 @@ Data Modeling:
 Designed and implemented a star-schema data warehouse consisting of a fact table (fact_stock_prices) and two dimension tables (dim_stock, dim_date). Referential integrity is enforced through foreign keys and optimized for analytical querying. Built a complete data ingestion pipeline using Airflow, Spark, Postgres, Docker, and Metabase.
 
 
+![Image](https://github.com/user-attachments/assets/963d52c8-fabb-47a6-bab9-34e3b81cb1b5)
+
+
 Tech Stack:
 
 - Multiple APIs (multi-source ingestion)
 - Airflow (orchestration)
 - Spark 
-- Postgres staging → Postgres warehouse (proper ELT modeling)
+- Postgres staging & Postgres warehouse (proper ELT modeling)
 - Metabase (visualization)
 - Docker Compose (local infra)
 
  ## Pipeline Flow
-1. Airflow task pulls stock API data into staging
-2. Spark job reads staging & transforms data (cleans, enriches)
-3. Spark loads to warehouse schema in PostgreSQL
-4. Metabase dashboards query the warehouse
+1. Airflow task pulls stock API data into staging zone (PostgreSQL)
+2. Spark job reads staging & transforms data (cleans and enriches)
+3. Spark loads data to a landing table
+4. airflow moves data from landing table to warehouse schema in PostgreSQL
+5. Metabase dashboards query the warehouse
 
 ## How to Run
     docker-compose up --build
