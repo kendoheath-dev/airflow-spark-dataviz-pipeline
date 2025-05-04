@@ -1,0 +1,164 @@
+Stock Market Data Engineering Pipeline
+
+Project Overview
+
+This project builds a full-stack data engineering pipeline that extracts stock market data from multiple external APIs, processes and transforms it using Apache Spark, stages and warehouses the data in PostgreSQL, and visualizes insights through Metabase.
+
+The workflow is fully orchestrated using Airflow and runs in a Dockerized environment for easy deployment.
+
+
+[External APIs: Stock Prices, Financial Indicators]
+             |
+        (Airflow DAGs: extract tasks)
+             |
+       [Postgres Staging Tables]
+             |
+        (Spark Transformations)
+             |
+       [Postgres Warehouse Tables]
+             |
+           (Metabase)
+         Visual Dashboards
+
+
+tech stack
+Technology
+Purpose
+Apache Airflow
+Task orchestration (ETL DAGs)
+Apache Spark
+Data transformation and feature engineering
+PostgreSQL
+Staging + Data Warehouse storage
+Metabase
+Data visualization and analytics
+Docker Compose
+Local infrastructure management
+Python
+API extraction scripts, Spark jobs
+
+pipeline workflow
+Pipeline Workflow
+	1.	Extract
+	•	Airflow DAGs trigger Python scripts to extract raw stock and financial data from two different APIs.
+	•	Data is inserted into Postgres staging tables.
+	2.	Transform
+	•	Spark jobs read from staging tables, compute derived metrics (VWAP, moving averages, returns, volatility, Doji patterns, etc.).
+	•	Spark outputs the clean, modeled data into Postgres warehouse tables.
+	3.	Load
+	•	Final “fact tables” and “dimension tables” are built inside the warehouse schema.
+	4.	Visualize
+	•	Metabase connects directly to the warehouse to create dashboards: trends, stock performance analytics, volatility insights, etc.
+
+
+Optional Pro Tweaks (if you want to go beast mode)
+	•	Add partitioning: If you have millions of records, partitioning by year or month could make queries faster.
+	•	Add indexes on date, volume, price_change_pct for faster analytics.
+	•	Set up a daily Airflow DAG to automate ingestion.
+	•	Create Superset dashboards using this table (price change trends, bullish days vs bearish days, etc.)
+
+from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
+from pyspark.sql.functions import lag, col
+
+# 1. Start Spark Session
+spark = SparkSession.builder \
+    .appName("StockDataEnrichment") \
+    .config("spark.jars", "/path/to/postgresql-42.5.0.jar") \
+    .getOrCreate()
+
+# 2. Assume you have the raw stock data
+stock_df = spark.read \
+    .format("csv") \
+    .option("header", "true") \
+    .option("inferSchema", "true") \
+    .load("path_to_your_stock_data.csv")
+
+# 3. Create derived columns
+enriched_df = stock_df.selectExpr(
+    "date",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "moving_avg",
+    
+    # Derived
+    "(close - open) AS price_change",
+    "((close - open) / open) * 100 AS price_change_pct",
+    "((high - low) / open) * 100 AS daily_volatility_pct",
+    "(open + high + low + close) / 4 AS approximate_vwap",
+    "CASE WHEN close > open THEN TRUE ELSE FALSE END AS is_bullish_day",
+    "CASE WHEN close < open THEN TRUE ELSE FALSE END AS is_bearish_day",
+    "CASE WHEN ABS(close - open) < 0.1 * (high - low) THEN TRUE ELSE FALSE END AS is_doji"
+)
+
+# 4. Add Daily Return using Window Function
+window_spec = Window.orderBy("date")
+
+enriched_df = enriched_df.withColumn(
+    "prev_close", 
+    lag("close").over(window_spec)
+).withColumn(
+    "daily_return",
+    ((col("close") - col("prev_close")) / col("prev_close")) * 100
+).drop("prev_close")  # optional: remove helper column
+
+# 5. Write to Postgres
+enriched_df.write \
+    .format("jdbc") \
+    .option("url", "jdbc:postgresql://your-postgres-host:5432/postgres_warehouse") \
+    .option("dbtable", "fact_table") \
+    .option("user", "your_username") \
+    .option("password", "your_password") \
+    .mode("append") \
+    .save()
+
+
+
+    2. Start the Full Stack (Docker Compose)
+    docker-compose up -d
+
+    3. Trigger the ETL DAG in Airflow
+	•	Go to http://localhost:8888
+	•	Unpause and trigger the stock_data_pipeline DAG
+
+    4. Monitor Processing Jobs
+	•	Airflow UI shows ETL job status.
+	•	Spark UI (optional) available at http://localhost:4040
+
+    5. Explore and Visualize Data
+	•	Connect Metabase to the warehouse Postgres instance.
+	•	Create dashboards analyzing:
+	•	Stock trends
+	•	Volatility patterns
+	•	Bullish vs Bearish days
+	•	Average returns over time
+
+1. VWAP — Volume Weighted Average Price
+
+VWAP stands for Volume Weighted Average Price.
+
+It’s a trading benchmark that represents the average price a stock traded at, weighted by volume, over a given period (usually intraday).
+
+Formula (at its simplest):
+
+VWAP = \frac{\sum (Price \times Volume)}{\sum (Volume)}
+
+Where:
+	•	Price = typically (open, high, low, close) average or last trade price.
+	•	Volume = number of shares traded at that price.
+
+⸻
+
+Why is VWAP important?
+	•	Traders (especially institutional) use VWAP to measure execution quality.
+	•	If they buy below VWAP, it’s considered a good buy.
+	•	VWAP is often used in algorithmic trading and trade execution strategies.
+	•	It’s also a support/resistance indicator — traders often watch how price behaves around VWAP.
+
+⸻
+
+In your case (since you have daily OHLC, not ticks),
+an approximation of VWAP for the day is simply:

@@ -46,7 +46,8 @@ services:
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
       AIRFLOW_CONN_SPARK_DEFAULT: spark://spark-master:7077
-      AIRFLOW_CONN_DATA_WAREHOUSE: postgresql://postgres:password@postgres_warehouse:5432/warehouse_db
+      AIRFLOW_CONN_POSTGRES_WAREHOUSE: postgresql+psycopg2://postgres:password@postgres_warehouse:5432/warehouse_db
+      AIRFLOW_CONN_POSTGRES_STAGING: postgresql+psycopg2://staging:staging_password@postgres_staging:5432/staging_db
       # JAVA_HOME: /opt/bitnami/java
       SPARK_MASTER_URL: spark://spark-master:7077
     volumes:
@@ -88,11 +89,13 @@ services:
       POSTGRES_USER: staging
       POSTGRES_PASSWORD: staging_password
       POSTGRES_DB: staging_db
+      TZ: America/New_York
     ports:
       - 5432:5432
     volumes:
       - ./db/postgres_staging/init.sql:/docker-entrypoint-initdb.d/init.sql
       - staging_db_volume:/var/lib/postgresql/data
+      # - ./db/postgres_staging/postgresql.conf:/var/lib/postgresql/data/postgresql.conf
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 5s
@@ -108,7 +111,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: warehouse_db
-    # 
+      TZ: America/New_York
+    
     ports:
       - 5433:5432
     volumes:
