@@ -54,7 +54,6 @@ def _extract_and_stage(symbol):
     # using upsert ensures downstream tasks still run cleanly
     # no duplicates are inserted if piplines reruns
 
-    # pg_hook = PostgresHook(postgres_conn_id="postgres_staging")
     insert_query = """
         INSERT  INTO dim_profile_data (
             symbol, name, sector, industry, exchange, ipo_date, is_active
@@ -77,9 +76,7 @@ def _extract_and_stage(symbol):
     response = requests.get(url)
     OHLCV_data = response.json()
 
-
     # Save to PostgreSQL (Staging)
-    # pg_hook = PostgresHook(postgres_conn_id="postgres_staging")
     hashed_data = hash_json(json.dumps(OHLCV_data).encode("utf-8"))
     insert_query = """
         INSERT INTO staging_stock_data (raw_json, data_hash) 
@@ -135,7 +132,6 @@ def _warehouse_load():
                             row["is_bullish_day"],
                             row["is_bearish_day"],
                             row["daily_return"]))
-        # -- stg_ohlcv_stock_prices
 
 with DAG(
     dag_id="api_to_spark", 
@@ -145,8 +141,8 @@ with DAG(
         
 # Step 1: Extract Data from API to Staging        
         fetch_tasks = []
-        # symbols = ["TSLA", "AAPL", "IBM"]           
-        symbols = ["IBM"]           
+        symbols = ["TSLA", "AAPL", "IBM"]           
+        # symbols = ["IBM"]           
         for symbol in symbols:
             extract_task = PythonOperator(
                 task_id=f"fetch_{symbol.lower()}_data",

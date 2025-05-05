@@ -68,7 +68,6 @@ df_flat = exploded_df.select(
 df_flat.show()
 # Create derived columns
 enriched_df = df_flat.selectExpr(
-                        # "CAST(date_format(date, 'yyyyMMdd') AS INT) AS date_id",
                         "*",
                         "(close_price - open_price) AS price_change",
                         "((close_price - open_price) / open_price) * 100 AS price_change_pct",
@@ -119,7 +118,6 @@ final_df = enriched_df.select(
     "is_bearish_day",
     "daily_return"
 )
-
 # final_df.dropDuplicates(["date_id", "stock"])
 # Load Processed Data into landing table
 final_df.write \
@@ -131,5 +129,4 @@ final_df.write \
     .option("driver", "org.postgresql.Driver") \
     .mode("overwrite") \
     .save()
-
 spark.stop()

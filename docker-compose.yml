@@ -9,7 +9,6 @@ services:
       SPARK_MASTER_HOST: spark-master
       SPARK_PORT: 7077
       SPARK_DEPLOY_MODE: client
-      
     ports:
       - 7077:7077
       - 8080:8080
@@ -21,7 +20,7 @@ services:
     build:
       context: .
       dockerfile: ./spark/Dockerfile.spark
-    restart: always #is this needed
+    restart: always #
     environment:
       SPARK_MODE: worker
       SPARK_MASTER_URL: spark://spark-master:7077
@@ -29,13 +28,12 @@ services:
       SPARK_WORKER_MEMORY: 2g
     ports:
 # since the worker connnect to the master internally on the docker network, it doesnt need to 7077 to the host
-      - 8081:8081                                                     #is this conn string correct with hyphen or under score
+      - 8081:8081                                                     
     command: /opt/bitnami/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077 --webui-port 8081
     volumes:
       - ./spark/src:/opt/bitnami/spark/src
     depends_on:
       - spark-master
-
   x-airflow-common:
     &airflow-common
     build:
@@ -71,7 +69,6 @@ services:
     depends_on:
       airflow-init:
         condition: service_completed_successfully
-
   airflow_scheduler:
     <<: *airflow-common
     container_name: airflow_scheduler
@@ -80,7 +77,6 @@ services:
     depends_on:
       airflow-init:
         condition: service_completed_successfully
-
   postgres_staging:
     image: postgres:latest
     container_name: postgres_staging
@@ -95,14 +91,11 @@ services:
     volumes:
       - ./db/postgres_staging/init.sql:/docker-entrypoint-initdb.d/init.sql
       - staging_db_volume:/var/lib/postgresql/data
-      # - ./db/postgres_staging/postgresql.conf:/var/lib/postgresql/data/postgresql.conf
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 5s
       retries: 5
     restart: always
-    # 
-
   postgres_warehouse:
     image: postgres:latest
     container_name: postgres_warehouse
@@ -112,7 +105,6 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: warehouse_db
       TZ: America/New_York
-    
     ports:
       - 5433:5432
     volumes:
@@ -123,11 +115,9 @@ services:
       interval: 5s
       retries: 5
     restart: always
-  
   metabase:
     image: metabase/metabase:latest
     container_name: metabase
-
     ports: 
     - 3000:3000
     environment:
@@ -138,25 +128,10 @@ services:
       MB_DB_PASS: password
       MB_DB_HOST: host.docker.internal
 
-# do we need these volumes? typically these are defined for use across mmultiple services
 volumes:
   staging_db_volume:
   warehouse_db_volume:
-  # airflow_home:
 
 networks:
   default:
     name: data_pipeline_net
-  # data_pipeline:
-# here we are using a bridge network for local development/single machine host
-    # driver: bridge
-# not needed because bridge networks are attachable by default
-    # attachable: true
-
-
-
-
-
-
-
-

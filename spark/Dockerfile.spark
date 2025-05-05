@@ -8,5 +8,4 @@ USER 1001
 # Download and store the Postgres JDBC driver for database connectivity
 RUN wget https://jdbc.postgresql.org/download/postgresql-42.7.3.jar -P /opt/bitnami/spark/jars
 
-# spark-submit --master spark://spark-master:7077 /opt/bitnami/spark/src/processing_script.py
 
