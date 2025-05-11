@@ -72,5 +72,5 @@ CREATE TABLE landing_stock_prices (
     is_bullish_day BOOLEAN,
     is_bearish_day BOOLEAN,
     daily_return NUMERIC,
-    UNIQUE(stock_id, date_id)
+    UNIQUE(stock_price_id, stock_id, date_id)
 );

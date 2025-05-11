@@ -85,20 +85,21 @@ def _extract_and_stage(symbol):
     staging_hook.run(insert_query, parameters=(json.dumps(OHLCV_data), hashed_data))
 
 
+# Load into warehouse
 def _warehouse_load():
     profile_dataframe = staging_hook.get_pandas_df("SELECT * FROM dim_profile_data")
     OHLCV_dataframe = staging_hook.get_pandas_df("SELECT * FROM landing_stock_prices")
 
-    # Load into warehouse
     for _, row in profile_dataframe.iterrows():
         warehouse_hook.run("""
         INSERT  INTO dim_profile_data (stock_id, symbol, name, sector, industry, exchange, ipo_date, is_active) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s );
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s )
+        ON CONFLICT (stock_id) DO NOTHING;
         """, parameters=(row['stock_id'], row['symbol'], row['name'], row['sector'], row['industry'], row['exchange'], row['ipo_date'], row['is_active']))
     for _, row in OHLCV_dataframe.iterrows():
         warehouse_hook.run("""
             INSERT INTO fact_stock_prices_daily ( 
-                            "stock_price_id",
+
                             "stock_id",
                             "date_id",   
                             "open_price",
@@ -114,9 +115,9 @@ def _warehouse_load():
                             "is_bullish_day",
                             "is_bearish_day",
                             "daily_return" ) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (stock_id, date_id) DO NOTHING;
-        """, parameters=(row["stock_price_id"],
+        """, parameters=(
                             row["stock_id"],
                             row["date_id"],   
                             row["open_price"],
@@ -141,7 +142,7 @@ with DAG(
         
 # Step 1: Extract Data from API to Staging        
         fetch_tasks = []
-        symbols = ["TSLA", "AAPL", "IBM"]           
+        symbols = ["TSLA", "AAPL"]           
         # symbols = ["IBM"]           
         for symbol in symbols:
             extract_task = PythonOperator(

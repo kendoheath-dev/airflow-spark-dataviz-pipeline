@@ -34,22 +34,22 @@ raw_df = spark.read \
     .format("jdbc") \
     .option("url", "jdbc:postgresql://postgres_staging:5432/staging_db") \
     .option("dbtable", "staging_stock_data") \
-    .option("user", "staging") \
-    .option("password", "staging_password") \
+    .option("user", "postgres") \
+    .option("password", "password") \
     .option("driver", "org.postgresql.Driver") \
     .load()
 dim_stock_df = spark.read.format("jdbc") \
     .option("url", "jdbc:postgresql://postgres_staging:5432/staging_db") \
     .option("dbtable", "dim_profile_data") \
-    .option("user", "staging") \
-    .option("password", "staging_password") \
+    .option("user", "postgres") \
+    .option("password", "password") \
     .option("driver", "org.postgresql.Driver") \
     .load()
 dim_date_df  = spark.read.format("jdbc") \
     .option("url", "jdbc:postgresql://postgres_staging:5432/staging_db") \
     .option("dbtable", "dim_date") \
-    .option("user", "staging") \
-    .option("password", "staging_password") \
+    .option("user", "postgres") \
+    .option("password", "password") \
     .option("driver", "org.postgresql.Driver") \
     .load()
 
@@ -124,8 +124,8 @@ final_df.write \
     .format("jdbc") \
     .option("url", "jdbc:postgresql://postgres_staging:5432/staging_db") \
     .option("dbtable", "landing_stock_prices") \
-    .option("user", "staging") \
-    .option("password", "staging_password") \
+    .option("user", "postgres") \
+    .option("password", "password") \
     .option("driver", "org.postgresql.Driver") \
     .mode("overwrite") \
     .save()
