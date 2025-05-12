@@ -157,6 +157,7 @@ with DAG(
             task_id="submit_spark_job",
             application="/opt/bitnami/spark/src/processing_script.py",
             conn_id="spark_default",
+            deploy_mode="client",
             conf={
                     "spark.master":"spark://spark-master:7077",
                     "spark.jars":"/opt/bitnami/spark/jars/postgresql-42.7.3.jar"},

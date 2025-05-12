@@ -6,8 +6,10 @@ from pyspark.sql.window import Window
 # Initialize Spark Session
 spark = SparkSession.builder \
     .appName("DataProcessingJob") \
-    .master("local[*]")\
+    .master("spark://spark-master:7077")\
     .config("spark.jars", "/opt/bitnami/spark/jars/postgresql-42.7.3.jar") \
+    .config("spark.executor.memory", "512m") \
+    .config("spark.driver.memory", "512m") \
     .getOrCreate()
 
 time_series_schema = StructType([
