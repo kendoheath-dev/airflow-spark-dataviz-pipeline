@@ -1,8 +1,12 @@
 from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.python import PythonOperator
+# from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+
+from airflow.providers.apache.livy.operators.livy import LivyOperator
+
 
 from datetime import datetime
 import requests
@@ -153,16 +157,31 @@ with DAG(
             fetch_tasks.append(extract_task)
 
 # Step 2: Transform with Spark
-        submit_spark_job = SparkSubmitOperator(
+        submit_spark_job = LivyOperator(
             task_id="submit_spark_job",
-            application="/opt/bitnami/spark/src/processing_script.py",
-            conn_id="spark_default",
-            deploy_mode="client",
+            livy_conn_id="livy_conn",
+            # file="processing_script.py",
+            # file="local:///shared/processing_script.py",
+            # file="local://shared/processing_script.py",
+            file="local:/opt/spark/cambridgesemantics_jars/processing_script.py",
             conf={
-                    "spark.master":"spark://spark-master:7077",
-                    "spark.jars":"/opt/bitnami/spark/jars/postgresql-42.7.3.jar"},
-            verbose=True
+                # "spark.files": "/shared/processing_script.py",
+                "spark.files": "/opt/spark/cambridgesemantics_jars/processing_script.py",
+                "spark.master": "spark://spark-master:7077"
+            }
         )
+        # submit_spark_job = SimpleHttpOperator(
+        #     task_id="submit_spark_job",
+        #     http_conn_id="livy_conn",
+        #     method="POST",
+        #     endpoint="batches",
+        #     data="""{"file": "local:/opt/spark/jobs/processing_script.py"}"""
+        # )
+            # application="/opt/bitnami/spark/src/processing_script.py",
+            # conf={
+            #         "spark.master":"spark://spark-master:7077",
+            #         "spark.jars":"/opt/bitnami/spark/jars/postgresql-42.7.3.jar"},
+            # verbose=True
 # Step 3: Load to datawarehouse
         load_to_warehouse = PythonOperator(
             task_id="load_to_warehouse",

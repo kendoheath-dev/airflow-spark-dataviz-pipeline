@@ -1,0 +1,42 @@
+FROM openjdk:11-jdk-slim
+#COPY ./spark/src /opt/spark/cambridgesemantics_jars
+# COPY ./livy/livy.conf /opt/livy/conf/livy.conf
+
+# ENV SPARK_VERSION=3.5.1
+# ENV HADOOP_VERSION=3
+USER root
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    wget \
+    unzip \
+    iputils-ping  \
+    ca-certificates \
+    default-jdk && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsL https://dlcdn.apache.org/incubator/livy/0.8.0-incubating/apache-livy-0.8.0-incubating_2.11-bin.zip \
+    -o livy.zip && unzip livy.zip -d /opt/livy
+    # /usr/bin/
+# RUN curl -fsSL -o /tmp/spark.tgz https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz && \
+# tar -xzf /tmp/spark.tgz -C /opt && \
+#ln -s /opt/spark-3.5.1-bin-hadoop3 /opt/spark && \
+#ln -s /opt/spark/bin/spark-submit /usr/local/bin/spark-submit && \
+#rm /tmp/spark.tgz
+
+RUN curl -fsSL -o /tmp/spark.tgz https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz 
+# RUN curl -fsL -o /tmp/spark.tgz https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz 
+RUN tar -xzf /tmp/spark.tgz -C /opt && \
+    ln -s /opt/spark-3.5.1-bin-hadoop3 /opt/spark && \
+    ln -s /opt/spark/bin/spark-submit /usr/local/bin/spark-submit && \
+    rm /tmp/spark.tgz
+
+ENV SPARK_HOME=/opt/spark
+ENV LIVY_HOME=/opt/livy
+ENV PATH=$SPARK_HOME/bin:$PATH
+ENV PATH=$LIVY_HOME/apache-livy-0.8.0-incubating_2.11-bin/bin:$PATH
+
+
+CMD ["livy-server"]
+# CMD ["tail", "-f", "/dev/null"]

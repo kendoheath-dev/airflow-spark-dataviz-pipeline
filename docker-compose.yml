@@ -8,13 +8,16 @@ services:
       SPARK_MODE: master
       SPARK_MASTER_HOST: spark-master
       SPARK_PORT: 7077
-      SPARK_DEPLOY_MODE: client
+      SPARK_DEPLOY_MODE: cluster
     ports:
       - 7077:7077
       - 8080:8080
     command: /opt/bitnami/spark/bin/spark-class org.apache.spark.deploy.master.Master --webui-port 8080
     volumes:
-      - ./spark/src:/opt/bitnami/spark/src
+      # - ./spark/src:/opt/bitnami/spark/src
+      # - ./spark/src:/opt/spark/jobs
+      #should i keep the full path or just the directories
+      - shared_script:/opt/spark/cambridgesemantics_jars
     networks:
       - data_pipeline_net
   spark-worker:
@@ -22,32 +25,58 @@ services:
     build:
       context: .
       dockerfile: ./spark/Dockerfile.spark
-    restart: always #
+    restart: always 
     environment:
       SPARK_MODE: worker
       SPARK_MASTER_URL: spark://spark-master:7077
       SPARK_WORKER_CORES: 2
-      SPARK_WORKER_MEMORY: 1g
-    ports:
+      SPARK_WORKER_MEMORY: 2g
 # since the worker connnect to the master internally on the docker network, it doesnt need to 7077 to the host
+    ports:
       - 8081:8081                                                     
     command: /opt/bitnami/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077 --webui-port 8081
     volumes:
-      - ./spark/src:/opt/bitnami/spark/src
+      # - ./spark/src:/opt/bitnami/spark/src
+      # - ./spark/src:/opt/spark/jobs
+      - shared_script:/opt/spark/cambridgesemantics_jars
     networks:
       - data_pipeline_net
     depends_on:
+      - spark-master  
+
+  livy:
+    # image: cambridgesemantics/livy:latest
+    container_name: livy
+    build:
+      context: .
+      dockerfile: ./livy/Dockerfile.livy
+    ports:
+      - "8998:8998"
+    depends_on:
       - spark-master
+    environment:
+      SPARK_MASTER_URL: spark://spark-master:7077  
+      LIVY_OPTS: livy.file.local-dir-whitelist=/shared
+    volumes:
+      # - ./spark/src:/opt/spark/jobs
+      - ./livy/entrypoint.sh:/entrypoint.sh
+      - shared_script:/opt/spark/cambridgesemantics_jars
+      - ./livy/logs:/opt/livy/apache-livy-0.8.0-incubating_2.11-bin/logs
+      - ./livy/livy.conf:/opt/livy/conf/livy.conf
+      # - ./livy/livy.conf:/opt/tmp/livy.conf
+    networks:
+      - data_pipeline_net
   x-airflow-common:
     &airflow-common
     build:
       context: .
       dockerfile: ./airflow_home/Dockerfile.airflow
     environment:
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
-      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__CORE__DAGS__FOLDER: /opt/airflow/dags
+      AIRFLOW_DATABASE_SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
       AIRFLOW_CONN_SPARK_DEFAULT: spark://spark-master:7077
+      AIRFLOW_CONN_LIVY_CONN: http://livy:8998
       AIRFLOW_CONN_POSTGRES_WAREHOUSE: postgresql+psycopg2://postgres:password@postgres_warehouse:5432/warehouse_db
       AIRFLOW_CONN_POSTGRES_STAGING: postgresql+psycopg2://postgres:password@postgres_staging:5432/staging_db
       # JAVA_HOME: /opt/bitnami/java
@@ -56,14 +85,16 @@ services:
       - data_pipeline_net
     volumes:
       - ./airflow_home:/opt/airflow
-      - ./spark/src:/opt/bitnami/spark/src/
+      # - ./spark/src:/opt/bitnami/spark/src/
+      # - shared_script:/shared
     depends_on: 
       - postgres_staging
       - spark-master
       - spark-worker
+      - livy
   airflow-init:
-    <<: *airflow-common
     command: ["airflow", "db", "init"]
+    <<: *airflow-common
   airflow_webserver:
     <<: *airflow-common
     container_name: airflow_webserver
@@ -101,7 +132,7 @@ services:
       - ./db/postgres_staging/init.sql:/docker-entrypoint-initdb.d/init.sql
       - staging_db_volume:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
+      test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       retries: 5
     restart: always
@@ -122,7 +153,7 @@ services:
       - ./db/postgres_warehouse/init.sql:/docker-entrypoint-initdb.d/init.sql
       - warehouse_db_volume:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
+      test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       retries: 5
     restart: always
@@ -144,6 +175,8 @@ services:
 volumes:
   staging_db_volume:
   warehouse_db_volume:
+  shared_script:
+  
 
 networks:
   data_pipeline_net:

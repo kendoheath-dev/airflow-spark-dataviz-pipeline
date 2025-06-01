@@ -3,13 +3,12 @@ from pyspark.sql.types import StringType, StructType, StructField, MapType
 from pyspark.sql.functions import from_json, explode, col, lit, create_map, avg, lag, monotonically_increasing_id
 from pyspark.sql.window import Window
 
-# Initialize Spark Session
 spark = SparkSession.builder \
     .appName("DataProcessingJob") \
     .master("spark://spark-master:7077")\
     .config("spark.jars", "/opt/bitnami/spark/jars/postgresql-42.7.3.jar") \
-    .config("spark.executor.memory", "512m") \
-    .config("spark.driver.memory", "512m") \
+    .config("spark.executor.memory", "1g") \
+    .config("spark.driver.memory", "1g") \
     .getOrCreate()
 
 time_series_schema = StructType([
@@ -120,7 +119,7 @@ final_df = enriched_df.select(
     "is_bearish_day",
     "daily_return"
 )
-# final_df.dropDuplicates(["date_id", "stock"])
+# final_df.dropDuplicates(["date_id", "stock_id"])
 # Load Processed Data into landing table
 final_df.write \
     .format("jdbc") \
@@ -131,4 +130,4 @@ final_df.write \
     .option("driver", "org.postgresql.Driver") \
     .mode("overwrite") \
     .save()
-spark.stop()
+# spark.stop()
