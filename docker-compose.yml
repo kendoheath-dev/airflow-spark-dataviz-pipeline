@@ -8,7 +8,8 @@ services:
       SPARK_MODE: master
       SPARK_MASTER_HOST: spark-master
       SPARK_PORT: 7077
-      SPARK_DEPLOY_MODE: cluster
+      # SPARK_DEPLOY_MODE: cluster
+      SPARK_DEPLOY_MODE: client
     ports:
       - 7077:7077
       - 8080:8080
@@ -17,7 +18,7 @@ services:
       # - ./spark/src:/opt/bitnami/spark/src
       # - ./spark/src:/opt/spark/jobs
       #should i keep the full path or just the directories
-      - shared_script:/opt/spark/cambridgesemantics_jars
+      - ./spark/src:/opt/spark/cambridgesemantics_jars
     networks:
       - data_pipeline_net
   spark-worker:
@@ -38,7 +39,7 @@ services:
     volumes:
       # - ./spark/src:/opt/bitnami/spark/src
       # - ./spark/src:/opt/spark/jobs
-      - shared_script:/opt/spark/cambridgesemantics_jars
+      - ./spark/src:/opt/spark/cambridgesemantics_jars
     networks:
       - data_pipeline_net
     depends_on:
@@ -56,13 +57,15 @@ services:
       - spark-master
     environment:
       SPARK_MASTER_URL: spark://spark-master:7077  
-      LIVY_OPTS: livy.file.local-dir-whitelist=/shared
+      # LIVY_OPTS: livy.file.local-dir-whitelist=/shared
     volumes:
       # - ./spark/src:/opt/spark/jobs
-      - ./livy/entrypoint.sh:/entrypoint.sh
-      - shared_script:/opt/spark/cambridgesemantics_jars
+      # - ./livy/entrypoint.sh:/entrypoint.sh
+      - ./spark/src:/opt/spark/cambridgesemantics_jars
       - ./livy/logs:/opt/livy/apache-livy-0.8.0-incubating_2.11-bin/logs
-      - ./livy/livy.conf:/opt/livy/conf/livy.conf
+      - ./livy/livy.conf:/apache-livy-0.8.0-incubating_2.11-bin/conf/livy.conf
+      - ./livy/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      # - ./livy/livy.conf:/opt/livy/conf/livy.conf
       # - ./livy/livy.conf:/opt/tmp/livy.conf
     networks:
       - data_pipeline_net
@@ -123,13 +126,14 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: staging_db
-      TZ: America/New_York
+      # TZ: America/New_York
     ports:
       - 5432:5432
     networks:
       - data_pipeline_net
     volumes:
-      - ./db/postgres_staging/init.sql:/docker-entrypoint-initdb.d/init.sql
+      # - ./db/postgres_staging/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/postgres_staging/init1.sql:/docker-entrypoint-initdb.d/init.sql
       - staging_db_volume:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]

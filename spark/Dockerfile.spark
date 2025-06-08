@@ -1,12 +1,11 @@
-FROM bitnami/spark:3.5.1
+FROM bitnami/spark:3.5.6
 WORKDIR /opt/bitnami/spark
 #switch to root user
 USER root
 RUN apt-get update && apt-get install -y wget
 # switch back to non root user
 USER 1001 
-# Download and store the Postgres JDBC driver for database connectivity
-RUN wget https://jdbc.postgresql.org/download/postgresql-42.7.3.jar -P /opt/bitnami/spark/jars
+# Download and store the Postgres JDBC driver for database connectivity      
 
 
 

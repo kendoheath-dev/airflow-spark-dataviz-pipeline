@@ -1,4 +1,4 @@
-
+SET TIME ZONE 'America/New_York';
 CREATE TABLE dim_date (
     date_id INT PRIMARY KEY,     -- 20250428 format
     date DATE NOT NULL,     
@@ -34,8 +34,8 @@ FROM generate_series(
     '2030-12-31'::date,  -- End date
     interval '1 day'     -- Step = 1 day
 ) AS d;
-    -- we would maybe want ipo year
-    -- version INT DEFAULT 1
+
+
 CREATE TABLE staging_stock_data (
     id SERIAL PRIMARY KEY,
     raw_json JSONB,

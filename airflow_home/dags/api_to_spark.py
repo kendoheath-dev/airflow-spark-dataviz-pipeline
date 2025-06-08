@@ -14,8 +14,8 @@ import hashlib
 import json
 
 
-staging_hook = PostgresHook(postgres_conn_id="postgres_staging")
-warehouse_hook = PostgresHook(postgres_conn_id="postgres_warehouse")
+staging_hook = PostgresHook(postgres_conn_id="postgres_staging", enable_log_db_messages=True)
+warehouse_hook = PostgresHook(postgres_conn_id="postgres_warehouse", enable_log_db_messages=True)
 
 def hash_json(dataset):
     hash_object = hashlib.sha256()
@@ -24,8 +24,8 @@ def hash_json(dataset):
 
 # Function to extract API data and save it to PostgreSQL (Staging Layer)
 def _extract_and_stage(symbol):
-    # av_api_key: str = "TUIC1EDE34L1LOYA"
-    av_api_key: str = "KGPRB0VYQ0ISWTOI"
+    av_api_key: str = "TUIC1EDE34L1LOYA"
+    # av_api_key: str = "KGPRB0VYQ0ISWTOI"
     fmp_apikey="qMZXWlXSQjw6scFJbsTLE0h5aR7KQP3p"
     function="OVERVIEW"
     av_url = f'https://www.alphavantage.co/query?function={function}&symbol={symbol}&apikey={av_api_key}'
@@ -100,10 +100,10 @@ def _warehouse_load():
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s )
         ON CONFLICT (stock_id) DO NOTHING;
         """, parameters=(row['stock_id'], row['symbol'], row['name'], row['sector'], row['industry'], row['exchange'], row['ipo_date'], row['is_active']))
+    
     for _, row in OHLCV_dataframe.iterrows():
-        warehouse_hook.run("""
+        warehouse_hook.run(""" 
             INSERT INTO fact_stock_prices_daily ( 
-
                             "stock_id",
                             "date_id",   
                             "open_price",
@@ -156,6 +156,9 @@ with DAG(
             )
             fetch_tasks.append(extract_task)
 
+# in the file= field — it wants a filename only that matches
+# what you pass in spark.files.
+# Livy does not allow absolute paths 
 # Step 2: Transform with Spark
         submit_spark_job = LivyOperator(
             task_id="submit_spark_job",
@@ -163,7 +166,7 @@ with DAG(
             # file="processing_script.py",
             # file="local:///shared/processing_script.py",
             # file="local://shared/processing_script.py",
-            file="local:/opt/spark/cambridgesemantics_jars/processing_script.py",
+            file="local:///opt/spark/cambridgesemantics_jars/processing_script.py",
             conf={
                 # "spark.files": "/shared/processing_script.py",
                 "spark.files": "/opt/spark/cambridgesemantics_jars/processing_script.py",
@@ -190,3 +193,4 @@ with DAG(
         
         fetch_tasks >> submit_spark_job >> load_to_warehouse
         # fetch_tasks >> submit_spark_job
+

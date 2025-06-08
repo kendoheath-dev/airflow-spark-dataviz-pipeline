@@ -6,7 +6,7 @@ from pyspark.sql.window import Window
 spark = SparkSession.builder \
     .appName("DataProcessingJob") \
     .master("spark://spark-master:7077")\
-    .config("spark.jars", "/opt/bitnami/spark/jars/postgresql-42.7.3.jar") \
+    .config("spark.jars", "/opt/spark/jars/postgresql-42.7.3.jar") \
     .config("spark.executor.memory", "1g") \
     .config("spark.driver.memory", "1g") \
     .getOrCreate()
