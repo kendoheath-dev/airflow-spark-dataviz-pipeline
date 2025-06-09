@@ -1,18 +1,14 @@
 from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.python import PythonOperator
-# from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
-
+# from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.providers.apache.livy.operators.livy import LivyOperator
-
-
 from datetime import datetime
+import psycopg2.extras
 import requests
 import hashlib
 import json
-
 
 staging_hook = PostgresHook(postgres_conn_id="postgres_staging", enable_log_db_messages=True)
 warehouse_hook = PostgresHook(postgres_conn_id="postgres_warehouse", enable_log_db_messages=True)
@@ -53,11 +49,9 @@ def _extract_and_stage(symbol):
                 "ipo_date": fmp_profile_data.get("ipoDate"),
                 "is_active": fmp_profile_data.get("isActivelyTrading")
             })
-    # Save to PostgreSQL (Staging)
-    # UPSERT handles duplicate records; stock symbol exist, Postgres ignores it
+        
     # using upsert ensures downstream tasks still run cleanly
     # no duplicates are inserted if piplines reruns
-
     insert_query = """
         INSERT  INTO dim_profile_data (
             symbol, name, sector, industry, exchange, ipo_date, is_active
@@ -101,8 +95,10 @@ def _warehouse_load():
         ON CONFLICT (stock_id) DO NOTHING;
         """, parameters=(row['stock_id'], row['symbol'], row['name'], row['sector'], row['industry'], row['exchange'], row['ipo_date'], row['is_active']))
     
-    for _, row in OHLCV_dataframe.iterrows():
-        warehouse_hook.run(""" 
+    # Bulk insertion into fact table. Alternative ways causing inconsistent results
+    conn = warehouse_hook.get_conn()
+    cursor = conn.cursor()
+    sql = """ 
             INSERT INTO fact_stock_prices_daily ( 
                             "stock_id",
                             "date_id",   
@@ -119,24 +115,29 @@ def _warehouse_load():
                             "is_bullish_day",
                             "is_bearish_day",
                             "daily_return" ) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES %s
             ON CONFLICT (stock_id, date_id) DO NOTHING;
-        """, parameters=(
-                            row["stock_id"],
-                            row["date_id"],   
-                            row["open_price"],
-                            row["high_price"],
-                            row["low_price"],
-                            row["close_price"],
-                            row["trade_volume"],
-                            row["moving_avg"],
-                            row["price_change"],
-                            row["price_change_pct"],
-                            row["daily_volatility_pct"],
-                            row["approximate_vwap"],
-                            row["is_bullish_day"],
-                            row["is_bearish_day"],
-                            row["daily_return"]))
+        """
+# WARNING fact table populates when table is truncated. this related to on conflict statement
+    rows = OHLCV_dataframe[["stock_id",
+                        "date_id",   
+                        "open_price",
+                        "high_price",
+                        "low_price",
+                        "close_price",
+                        "trade_volume",
+                        "moving_avg",
+                        "price_change",
+                        "price_change_pct",
+                        "daily_volatility_pct",
+                        "approximate_vwap",
+                        "is_bullish_day",
+                        "is_bearish_day",
+                        "daily_return"]].values.tolist()
+    psycopg2.extras.execute_values(cursor, sql, rows)
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 with DAG(
     dag_id="api_to_spark", 
@@ -163,28 +164,13 @@ with DAG(
         submit_spark_job = LivyOperator(
             task_id="submit_spark_job",
             livy_conn_id="livy_conn",
-            # file="processing_script.py",
-            # file="local:///shared/processing_script.py",
-            # file="local://shared/processing_script.py",
-            file="local:///opt/spark/cambridgesemantics_jars/processing_script.py",
+            file="local:///opt/spark/jobs/processing_script.py",
             conf={
-                # "spark.files": "/shared/processing_script.py",
-                "spark.files": "/opt/spark/cambridgesemantics_jars/processing_script.py",
+                "spark.files": "/opt/spark/jobs/processing_script.py",
                 "spark.master": "spark://spark-master:7077"
             }
         )
-        # submit_spark_job = SimpleHttpOperator(
-        #     task_id="submit_spark_job",
-        #     http_conn_id="livy_conn",
-        #     method="POST",
-        #     endpoint="batches",
-        #     data="""{"file": "local:/opt/spark/jobs/processing_script.py"}"""
-        # )
-            # application="/opt/bitnami/spark/src/processing_script.py",
-            # conf={
-            #         "spark.master":"spark://spark-master:7077",
-            #         "spark.jars":"/opt/bitnami/spark/jars/postgresql-42.7.3.jar"},
-            # verbose=True
+        
 # Step 3: Load to datawarehouse
         load_to_warehouse = PythonOperator(
             task_id="load_to_warehouse",

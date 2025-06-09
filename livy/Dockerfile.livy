@@ -1,19 +1,11 @@
 FROM openjdk:11-jdk-slim
-# WORKDIR /opt
-# ENV SPARK_HOME=/usr/lib/spark
+
 ENV SPARK_HOME=/opt/spark
-
 ENV HADOOP_CONF_DIR=/etc/hadoop/conf
-
-
-# ENV PARK_HOME=/opt/spark
 ENV LIVY_HOME=/opt/livy
-#COPY ./spark/src /opt/spark/cambridgesemantics_jars
-# ADD ./livy/livy.conf /opt/livy/conf/livy.conf
-ADD ./livy/livy.conf ${LIVY_HOME}/apache-livy-0.8.0-incubating_2.11-bin/conf/livy.conf
-
-# ENV SPARK_VERSION=3.5.1
+ENV SPARK_VERSION=spark-3.5.6
 # ENV HADOOP_VERSION=3
+ADD ./livy/livy.conf ${LIVY_HOME}/apache-livy-0.8.0-incubating_2.11-bin/conf/livy.conf
 USER root
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -25,33 +17,22 @@ RUN apt-get update && \
     ca-certificates \
     default-jdk && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* 
+RUN mkdir -p /opt/spark
 
-    RUN curl -fsL https://dlcdn.apache.org/incubator/livy/0.8.0-incubating/apache-livy-0.8.0-incubating_2.11-bin.zip \
-    -o livy.zip && unzip livy.zip -d /opt/livy
-    # /usr/bin/
-    # RUN curl -fsSL -o /tmp/spark.tgz https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz && \
-    # tar -xzf /tmp/spark.tgz -C /opt && \
-    #ln -s /opt/spark-3.5.1-bin-hadoop3 /opt/spark && \
-    #ln -s /opt/spark/bin/spark-submit /usr/local/bin/spark-submit && \
-    #rm /tmp/spark.tgz
-    # using archived spark binaries
-    # RUN mkdir /opt/spark
-    RUN curl -fsSL -o /tmp/spark.tgz https://downloads.apache.org/spark/spark-3.5.6/spark-3.5.6-bin-hadoop3.tgz  
-    # RUN curl -fsSL -o /tmp/spark.tgz https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz 
-    # RUN curl -fsL -o /tmp/spark.tgz https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz 
-    RUN mkdir -p /opt/spark
-    RUN tar -xzf /tmp/spark.tgz -C /opt && \
-    mv /opt/spark-3.5.6-bin-hadoop3/* /opt/spark && \
-    # ln -s /opt/spark-3.5.6-bin-hadoop3 /opt/spark && \
-    # ln -s /usr/lib/spark/bin/spark-submit /usr/local/bin/spark-submit && \
+RUN curl -fsL https://dlcdn.apache.org/incubator/livy/0.8.0-incubating/apache-livy-0.8.0-incubating_2.11-bin.zip \
+-o livy.zip && unzip livy.zip -d /opt/livy
+
+# using archived spark binaries
+RUN curl -fsSL -o /tmp/spark.tgz https://downloads.apache.org/spark/${SPARK_VERSION}/${SPARK_VERSION}-bin-hadoop3.tgz  
+RUN tar -xzf /tmp/spark.tgz -C /opt && \
+    mv /opt/${SPARK_VERSION}-bin-hadoop3/* /opt/spark && \
     rm /tmp/spark.tgz
+    
 RUN wget https://jdbc.postgresql.org/download/postgresql-42.7.3.jar -P /opt/spark/jars
 
-# ENV PATH=$SPARK_HOME/spark-3.5.6-bin-hadoop3/bin:$PATH
 ENV PATH=$SPARK_HOME/bin:$PATH
 ENV PATH=$LIVY_HOME/apache-livy-0.8.0-incubating_2.11-bin/bin:$PATH
-
 
 CMD ["livy-server"]
 # CMD ["tail", "-f", "/dev/null"]

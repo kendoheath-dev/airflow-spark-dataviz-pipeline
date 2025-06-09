@@ -3,34 +3,28 @@ FROM apache/airflow:2.10.4
 WORKDIR /opt/airflow
 ENV AIRFLOW_HOME=/opt/airflow
 
-COPY ./spark/src /shared/
 RUN pip install --upgrade pip && \
-    pip install apache-airflow-providers-apache-spark && \
-    pip install apache-airflow-providers-apache-livy
+    # pip install apache-airflow-providers-apache-spark && \
+    pip install apache-airflow-providers-apache-livy && \ 
+    pip install psycopg2-binary
 
-USER root
+# USER root
 # Install Java and other prerequisites to allow spark-submit to run
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        curl \
-        iputils-ping \
-        default-jdk \
-        wget \
-        ca-certificates && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-# Download and install Spark. using archived binary
-# RUN curl -fsSL -o /tmp/spark.tgz https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz && \
-    # tar -xzf /tmp/spark.tgz -C /opt && \
-    # ln -s /opt/spark-3.5.1-bin-hadoop3 /opt/spark && \
-    # ln -s /opt/spark/bin/spark-submit /usr/local/bin/spark-submit && \
-    # rm /tmp/spark.tgz
-# RUN wget https://jdbc.postgresql.org/download/postgresql-42.7.3.jar -P /opt/bitnami/spark/jars
-
+# No longer submitting jobs via airflows saprk submitt opertaor
+# Using Livy component instead
+# RUN apt-get update && \
+#     apt-get install -y --no-install-recommends \
+#         curl \
+#         iputils-ping \
+#         default-jdk \
+#         wget \
+#         ca-certificates && \
+#     apt-get clean && \
+#     rm -rf /var/lib/apt/lists/*
 # Set Spark environment variables
-ENV SPARK_HOME=/opt/spark
-ENV PATH=$SPARK_HOME/bin:$PATH
-USER airflow
+# ENV SPARK_HOME=/opt/spark
+# ENV PATH=$SPARK_HOME/bin:$PATH
+# USER airflow
 
 
 

@@ -1,7 +1,7 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.types import StringType, StructType, StructField, MapType
 from pyspark.sql.functions import from_json, explode, col, lit, create_map, avg, lag, monotonically_increasing_id
+from pyspark.sql.types import StringType, StructType, StructField, MapType
 from pyspark.sql.window import Window
+from pyspark.sql import SparkSession
 
 spark = SparkSession.builder \
     .appName("DataProcessingJob") \
@@ -30,7 +30,7 @@ full_schema = StructType([
     StructField("Time Series (Daily)", 
             MapType(StringType(), time_series_schema), nullable=True)
     ])
-#  JSONb in postgres - it gets converted to a string over jdbc
+
 raw_df = spark.read \
     .format("jdbc") \
     .option("url", "jdbc:postgresql://postgres_staging:5432/staging_db") \
@@ -99,7 +99,6 @@ dim_date_df.show()
 
 # needed for fact table primary key
 enriched_df = enriched_df.withColumn("stock_price_id", monotonically_increasing_id())
-enriched_df.show()
 
 final_df = enriched_df.select(
     "stock_price_id",
@@ -119,7 +118,7 @@ final_df = enriched_df.select(
     "is_bearish_day",
     "daily_return"
 )
-# final_df.dropDuplicates(["date_id", "stock_id"])
+final_df.show()
 # Load Processed Data into landing table
 final_df.write \
     .format("jdbc") \
