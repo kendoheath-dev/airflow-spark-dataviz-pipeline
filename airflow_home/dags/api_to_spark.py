@@ -95,7 +95,7 @@ def _warehouse_load():
         ON CONFLICT (stock_id) DO NOTHING;
         """, parameters=(row['stock_id'], row['symbol'], row['name'], row['sector'], row['industry'], row['exchange'], row['ipo_date'], row['is_active']))
     
-    # Bulk insertion into fact table. Alternative ways causing inconsistent results
+    # Bulk insertion into fact table
     conn = warehouse_hook.get_conn()
     cursor = conn.cursor()
     sql = """ 
@@ -155,7 +155,7 @@ with DAG(
         
 # Step 1: Extract Data from API to Staging        
         fetch_tasks = []
-        symbols = ["TSLA", "AAPL"]           
+        symbols = ["TSLA", "AAPL", "IBM"]           
         # symbols = ["IBM"]           
         for symbol in symbols:
             extract_task = PythonOperator(
@@ -177,7 +177,7 @@ with DAG(
             }
         )
 
-# Step 3 - ensure data is availabalein landing table before loading. race condition without this task in place
+# Step 3 - Ensure data is available in landing table before loading. Race condition without this task in place
         verify_data_availability = PythonSensor(
             task_id="verify_landing_table",
             python_callable=_wait_for_table_to_fill,
@@ -191,5 +191,3 @@ with DAG(
         )
         
         fetch_tasks >> submit_spark_job >> verify_data_availability >> load_to_warehouse
-        # fetch_tasks >> submit_spark_job
-

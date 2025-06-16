@@ -3,7 +3,7 @@ WORKDIR /opt/bitnami/spark
 
 USER root
 RUN apt-get update && apt-get install -y wget
-# switch back to non root user
+# non root user
 USER 1001 
 
 
