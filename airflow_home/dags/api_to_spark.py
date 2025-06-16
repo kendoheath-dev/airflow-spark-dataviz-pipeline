@@ -2,8 +2,8 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-# from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.providers.apache.livy.operators.livy import LivyOperator
+from airflow.sensors.python import PythonSensor
 from datetime import datetime
 import psycopg2.extras
 import requests
@@ -118,7 +118,7 @@ def _warehouse_load():
             VALUES %s
             ON CONFLICT (stock_id, date_id) DO NOTHING;
         """
-# WARNING fact table populates when table is truncated. this related to on conflict statement
+
     rows = OHLCV_dataframe[["stock_id",
                         "date_id",   
                         "open_price",
@@ -134,10 +134,18 @@ def _warehouse_load():
                         "is_bullish_day",
                         "is_bearish_day",
                         "daily_return"]].values.tolist()
-    psycopg2.extras.execute_values(cursor, sql, rows)
-    conn.commit()
-    cursor.close()
-    conn.close()
+    try: 
+        psycopg2.extras.execute_values(cursor, sql, rows)
+    except Exception as e: 
+        print("insertion failed")
+    finally:
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+def _wait_for_table_to_fill():
+    count = staging_hook.get_first("SELECT COUNT(*) FROM landing_stock_prices")[0]
+    return count > 0
 
 with DAG(
     dag_id="api_to_spark", 
@@ -157,10 +165,8 @@ with DAG(
             )
             fetch_tasks.append(extract_task)
 
-# in the file= field — it wants a filename only that matches
-# what you pass in spark.files.
-# Livy does not allow absolute paths 
 # Step 2: Transform with Spark
+# this task succeeds because of the job being submitted not exactly because the job fully completed
         submit_spark_job = LivyOperator(
             task_id="submit_spark_job",
             livy_conn_id="livy_conn",
@@ -170,13 +176,20 @@ with DAG(
                 "spark.master": "spark://spark-master:7077"
             }
         )
+
+# Step 3 - ensure data is availabalein landing table before loading. race condition without this task in place
+        verify_data_availability = PythonSensor(
+            task_id="verify_landing_table",
+            python_callable=_wait_for_table_to_fill,
+            poke_interval=3
+        )
         
-# Step 3: Load to datawarehouse
+# Step 4 - Load to datawarehouse
         load_to_warehouse = PythonOperator(
             task_id="load_to_warehouse",
             python_callable=_warehouse_load
         )
         
-        fetch_tasks >> submit_spark_job >> load_to_warehouse
+        fetch_tasks >> submit_spark_job >> verify_data_availability >> load_to_warehouse
         # fetch_tasks >> submit_spark_job
 

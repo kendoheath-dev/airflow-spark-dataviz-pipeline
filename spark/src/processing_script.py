@@ -94,8 +94,8 @@ enriched_df = enriched_df \
                     ).drop("prev_close")
 
 enriched_df = enriched_df.drop("symbol").drop("date")
-print("dim date")
-dim_date_df.show()
+# print("dim date")
+# dim_date_df.show()
 
 # needed for fact table primary key
 enriched_df = enriched_df.withColumn("stock_price_id", monotonically_increasing_id())
@@ -118,7 +118,7 @@ final_df = enriched_df.select(
     "is_bearish_day",
     "daily_return"
 )
-final_df.show()
+# final_df.show()
 # Load Processed Data into landing table
 final_df.write \
     .format("jdbc") \
@@ -129,4 +129,5 @@ final_df.write \
     .option("driver", "org.postgresql.Driver") \
     .mode("overwrite") \
     .save()
+
 # spark.stop()

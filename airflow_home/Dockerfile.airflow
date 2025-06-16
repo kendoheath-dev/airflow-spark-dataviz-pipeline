@@ -1,5 +1,5 @@
 FROM apache/airflow:2.10.4
-# FROM apache/airflow:latest-python3.10
+
 WORKDIR /opt/airflow
 ENV AIRFLOW_HOME=/opt/airflow
 
@@ -7,52 +7,3 @@ RUN pip install --upgrade pip && \
     # pip install apache-airflow-providers-apache-spark && \
     pip install apache-airflow-providers-apache-livy && \ 
     pip install psycopg2-binary
-
-# USER root
-# Install Java and other prerequisites to allow spark-submit to run
-# No longer submitting jobs via airflows saprk submitt opertaor
-# Using Livy component instead
-# RUN apt-get update && \
-#     apt-get install -y --no-install-recommends \
-#         curl \
-#         iputils-ping \
-#         default-jdk \
-#         wget \
-#         ca-certificates && \
-#     apt-get clean && \
-#     rm -rf /var/lib/apt/lists/*
-# Set Spark environment variables
-# ENV SPARK_HOME=/opt/spark
-# ENV PATH=$SPARK_HOME/bin:$PATH
-# USER airflow
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# RUN pip install --no-cache-dir apache-airflow-providers-postgres==5.7.0
-# RUN pip install apache-airflow-providers-postgres --constraint \
-# "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.0/constraints-3.10.txt"
-
-
-# ENV PYTHONPATH=/opt/airflow:$PYTHONPATH
-# ENV PYTHONPATH="/opt/airflow/:${PYTHONPATH}"
-
-# ENV VIRTUAL_ENV=/opt/airflow/venv
-# ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
-# RUN python -m venv $VIRTUAL_ENV
-# RUN $VIRTUAL_ENV/bin/pip install --upgrade pip
-# RUN $VIRTUAL_ENV/bin/pip install apache-airflow-providers-postgres --constraint \
-# "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.0/constraints-3.10.txt"
