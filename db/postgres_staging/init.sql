@@ -30,7 +30,7 @@ SELECT
         ELSE FALSE
     END AS is_weekend
 FROM generate_series(
-    '2010-01-01'::date,  -- Start date
+    '1980-01-01'::date,  -- Start date
     '2030-12-31'::date,  -- End date
     interval '1 day'     -- Step = 1 day
 ) AS d;

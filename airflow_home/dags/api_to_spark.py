@@ -8,6 +8,9 @@ from datetime import datetime
 import psycopg2.extras
 import requests
 import hashlib
+
+
+import io
 import json
 
 staging_hook = PostgresHook(postgres_conn_id="postgres_staging", enable_log_db_messages=True)
@@ -20,10 +23,10 @@ def hash_json(dataset):
 
 # Function to extract API data and save it to PostgreSQL (Staging Layer)
 def _extract_and_stage(symbol):
-    av_api_key: str = "TUIC1EDE34L1LOYA"
+    av_api_key = "TUIC1EDE34L1LOYA"
     # av_api_key: str = "KGPRB0VYQ0ISWTOI"
-    fmp_apikey="qMZXWlXSQjw6scFJbsTLE0h5aR7KQP3p"
-    function="OVERVIEW"
+    fmp_apikey = "qMZXWlXSQjw6scFJbsTLE0h5aR7KQP3p"
+    function = "OVERVIEW"
     av_url = f'https://www.alphavantage.co/query?function={function}&symbol={symbol}&apikey={av_api_key}'
     fmp_url = f'https://financialmodelingprep.com/stable/profile?symbol={symbol}&apikey={fmp_apikey}'
     # Fetch from alphaVantage (av) API
@@ -70,7 +73,8 @@ def _extract_and_stage(symbol):
     ))
     # Extract OHLCV data (open high low close volume) from av API
     function = "TIME_SERIES_DAILY"
-    url = f'https://www.alphavantage.co/query?function={function}&outputsize=compact&symbol={symbol}&apikey={av_api_key}'
+    outputsize = "full"
+    url = f'https://www.alphavantage.co/query?function={function}&outputsize={outputsize}&symbol={symbol}&apikey={av_api_key}'
     response = requests.get(url)
     OHLCV_data = response.json()
 
@@ -134,12 +138,15 @@ def _warehouse_load():
                         "is_bullish_day",
                         "is_bearish_day",
                         "daily_return"]].values.tolist()
+    # .to_csv(buffer, sep="\t", index=False, header=False)
+    # buffer.seek(0)
+    
     try: 
         psycopg2.extras.execute_values(cursor, sql, rows)
+        conn.commit()
     except Exception as e: 
         print("insertion failed")
     finally:
-        conn.commit()
         cursor.close()
         conn.close()
 

@@ -65,6 +65,7 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__CORE__DAGS__FOLDER: /opt/airflow/dags
+      AIRFLOW__WEBSERVER__AUTH__BACKEND: airflow.www.security.NoAuthBackend
       AIRFLOW_DATABASE_SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
       AIRFLOW_CONN_SPARK_DEFAULT: spark://spark-master:7077
       AIRFLOW_CONN_LIVY_CONN: http://livy:8998
