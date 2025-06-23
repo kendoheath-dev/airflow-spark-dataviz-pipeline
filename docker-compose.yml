@@ -71,7 +71,6 @@ services:
       AIRFLOW_CONN_LIVY_CONN: http://livy:8998
       AIRFLOW_CONN_POSTGRES_WAREHOUSE: postgresql+psycopg2://postgres:password@postgres_warehouse:5432/warehouse_db
       AIRFLOW_CONN_POSTGRES_STAGING: postgresql+psycopg2://postgres:password@postgres_staging:5432/staging_db
-      # JAVA_HOME: /opt/bitnami/java
       SPARK_MASTER_URL: spark://spark-master:7077
     networks:
       - data_pipeline_net
