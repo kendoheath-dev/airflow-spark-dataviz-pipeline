@@ -64,9 +64,9 @@ services:
       dockerfile: ./airflow_home/Dockerfile.airflow
     environment:
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
-      AIRFLOW__CORE__DAGS__FOLDER: /opt/airflow/dags
-      AIRFLOW__WEBSERVER__AUTH__BACKEND: airflow.www.security.NoAuthBackend
-      AIRFLOW_DATABASE_SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__WEBSERVER__AUTH_BACKEND: airflow.www.security.NoAuthBackend
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
       AIRFLOW_CONN_SPARK_DEFAULT: spark://spark-master:7077
       AIRFLOW_CONN_LIVY_CONN: http://livy:8998
       AIRFLOW_CONN_POSTGRES_WAREHOUSE: postgresql+psycopg2://postgres:password@postgres_warehouse:5432/warehouse_db
@@ -89,7 +89,7 @@ services:
     container_name: airflow_webserver
     command: airflow webserver
     environment:
-      AIRFLOW__WEBSERVER_RBAC: True
+      AIRFLOW__WEBSERVER_RBAC: False
     restart: always
     ports:
       - 8888:8080
