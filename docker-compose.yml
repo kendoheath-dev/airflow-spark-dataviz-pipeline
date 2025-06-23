@@ -88,8 +88,6 @@ services:
     <<: *airflow-common
     container_name: airflow_webserver
     command: airflow webserver
-    environment:
-      AIRFLOW__WEBSERVER_RBAC: False
     restart: always
     ports:
       - 8888:8080
