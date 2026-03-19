@@ -13,7 +13,9 @@ services:
     ports:
       - 7077:7077
       - 8080:8080
-    command: /opt/bitnami/spark/bin/spark-class org.apache.spark.deploy.master.Master --webui-port 8080
+
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --webui-port 8080
+    restart: always 
     volumes:
       - ./spark/src:/opt/spark/jobs
     networks:
@@ -32,7 +34,7 @@ services:
 # since the worker connnect to the master internally on the docker network, it doesnt need to 7077 to the host
     ports:
       - 8081:8081                                                     
-    command: /opt/bitnami/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077 --webui-port 8081
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077 --webui-port 8081
     volumes:
       - ./spark/src:/opt/spark/jobs
     networks:
@@ -57,6 +59,24 @@ services:
       - ./livy/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
     networks:
       - data_pipeline_net
+  db:
+    container_name: db
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - 5431:5432
+    volumes:
+      - airflow_db_volume:/var/lib/postgresql/data
+    networks:
+      - data_pipeline_net
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: always
   x-airflow-common:
     &airflow-common
     build:
@@ -64,9 +84,11 @@ services:
       dockerfile: ./airflow_home/Dockerfile.airflow
     environment:
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
-      AIRFLOW__CORE__DAGS__FOLDER: /opt/airflow/dags
-      AIRFLOW__WEBSERVER__AUTH__BACKEND: airflow.www.security.NoAuthBackend
-      AIRFLOW_DATABASE_SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      # AIRFLOW__WEBSERVER__AUTH__BACKEND: airflow.www.security.NoAuthBackend
+      # AIRFLOW__WEBSERVER__AUTHENTICATE: False
+      # AIRFLOW_DATABASE_SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@db/airflow
       AIRFLOW_CONN_SPARK_DEFAULT: spark://spark-master:7077
       AIRFLOW_CONN_LIVY_CONN: http://livy:8998
       AIRFLOW_CONN_POSTGRES_WAREHOUSE: postgresql+psycopg2://postgres:password@postgres_warehouse:5432/warehouse_db
@@ -75,24 +97,45 @@ services:
     networks:
       - data_pipeline_net
     volumes:
-      - ./airflow_home:/opt/airflow
+      - ./airflow_home/dags:/opt/airflow/dags
+      - ./airflow_home/webserver_config.py:/opt/airflow/webserver_config.py
+      # - ./airflow_home/airflow.cfg:/opt/airflow/airflow.cfg
+
     depends_on: 
       - postgres_staging
       - spark-master
       - spark-worker
       - livy
+      - db
+
   airflow-init:
-    command: ["airflow", "db", "init"]
     <<: *airflow-common
+    container_name: airflow-init
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@db:5432/airflow
+    # command: ["bash", "-c", "airflow db migrate"]
+    networks:
+      - data_pipeline_net
+    command: >
+      bash -c "
+        until pg_isready -h db -p 5432 -U airflow; do
+          echo 'waiting for postgres..........'
+          sleep 2
+        done
+        airflow db migrate
+      "
+
+
+     # airflow db migrate
   airflow_webserver:
     <<: *airflow-common
     container_name: airflow_webserver
     command: airflow webserver
-    environment:
-      AIRFLOW__WEBSERVER_RBAC: True
     restart: always
     ports:
-      - 8888:8080
+      - 9999:8080
+    volumes:
+      - ./airflow_home/webserver_config.py:/opt/airflow/webserver_config.py
     depends_on:
       airflow-init:
         condition: service_completed_successfully
@@ -104,8 +147,12 @@ services:
     depends_on:
       airflow-init:
         condition: service_completed_successfully
+      # db:
+      #   condition: service_completed_successfully
+    networks:
+      - data_pipeline_net
   postgres_staging:
-    image: postgres:latest
+    image: postgres:15
     container_name: postgres_staging
     environment: 
       POSTGRES_HOST_AUTH_METHOD: trust
@@ -120,13 +167,14 @@ services:
     volumes:
       - ./db/postgres_staging/init.sql:/docker-entrypoint-initdb.d/init.sql
       - staging_db_volume:/var/lib/postgresql/data
+      # - staging_db_volume:/var/lib/postgresql
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       retries: 5
     restart: always
   postgres_warehouse:
-    image: postgres:latest
+    image: postgres:15
     container_name: postgres_warehouse
     environment: 
       POSTGRES_HOST_AUTH_METHOD: trust
@@ -140,7 +188,8 @@ services:
       - data_pipeline_net
     volumes:
       - ./db/postgres_warehouse/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - warehouse_db_volume:/var/lib/postgresql/data
+      # - warehouse_db_volume:/var/lib/postgresql/data
+      - warehouse_db_volume:/var/lib/postgresql
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
@@ -162,9 +211,10 @@ services:
       - data_pipeline_net
 
 volumes:
+  airflow_db_volume:
   staging_db_volume:
   warehouse_db_volume:
-  shared_script:
+  # shared_script:
   
 networks:
   data_pipeline_net:

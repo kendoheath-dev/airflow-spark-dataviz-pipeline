@@ -35,10 +35,11 @@ FROM generate_series(
     interval '1 day'     -- Step = 1 day
 ) AS d;
 
-
+-- changed raw_json col from jsonb to text
+-- spark from_json() can only parse strings
 CREATE TABLE staging_stock_data (
     id SERIAL PRIMARY KEY,
-    raw_json JSONB,
+    raw_json TEXT,
     data_hash TEXT UNIQUE,
     ingestion_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -9,7 +9,6 @@ import psycopg2.extras
 import requests
 import hashlib
 
-
 import io
 import json
 
@@ -23,8 +22,8 @@ def hash_json(dataset):
 
 # Function to extract API data and save it to PostgreSQL (Staging Layer)
 def _extract_and_stage(symbol):
-    av_api_key = "TUIC1EDE34L1LOYA"
-    # av_api_key: str = "KGPRB0VYQ0ISWTOI"
+    # av_api_key = "TUIC1EDE34L1LOYA"
+    av_api_key: str = "KGPRB0VYQ0ISWTOI"
     fmp_apikey = "qMZXWlXSQjw6scFJbsTLE0h5aR7KQP3p"
     function = "OVERVIEW"
     av_url = f'https://www.alphavantage.co/query?function={function}&symbol={symbol}&apikey={av_api_key}'
@@ -73,8 +72,11 @@ def _extract_and_stage(symbol):
     ))
     # Extract OHLCV data (open high low close volume) from av API
     function = "TIME_SERIES_DAILY"
-    outputsize = "full"
+    # outputsize = "full"
+    outputsize = "compact"
+
     url = f'https://www.alphavantage.co/query?function={function}&outputsize={outputsize}&symbol={symbol}&apikey={av_api_key}'
+    # url = f'https://www.alphavantage.co/query?function={function}&symbol={symbol}&apikey={av_api_key}'
     response = requests.get(url)
     OHLCV_data = response.json()
 

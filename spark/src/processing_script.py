@@ -8,8 +8,8 @@ spark = SparkSession.builder \
     .master("spark://spark-master:7077")\
     .config("spark.jars", "/opt/spark/jars/postgresql-42.7.3.jar") \
     .config("spark.executor.memory", "1g") \
-    .config("spark.driver.memory", "1g") \
     .getOrCreate()
+    # .config("spark.driver.memory", "1g") \
 
 time_series_schema = StructType([
     StructField("1. open", StringType(), nullable=True),
@@ -18,6 +18,8 @@ time_series_schema = StructType([
     StructField("4. close", StringType(), nullable=True),
     StructField("5. volume", StringType(), nullable=True)
     ])
+
+
 full_schema = StructType([
     StructField("Meta Data", 
             StructType([
@@ -39,6 +41,8 @@ raw_df = spark.read \
     .option("password", "password") \
     .option("driver", "org.postgresql.Driver") \
     .load()
+
+
 dim_stock_df = spark.read.format("jdbc") \
     .option("url", "jdbc:postgresql://postgres_staging:5432/staging_db") \
     .option("dbtable", "dim_profile_data") \
@@ -53,8 +57,12 @@ dim_date_df  = spark.read.format("jdbc") \
     .option("password", "password") \
     .option("driver", "org.postgresql.Driver") \
     .load()
-
+# dim_date_df.show()
 parsed_df = raw_df.withColumn("parsed_data", from_json(col("raw_json"), full_schema))
+raw_df.printSchema()
+raw_df.select("raw_json").show(truncate=False)
+parsed_df.show()
+# exploded_df = parsed_df.selectExpr("*","parsed_data.`Meta Data`.`Symbol` as symbol")
 exploded_df = parsed_df.selectExpr("*","parsed_data.`Meta Data`.`2. Symbol` as symbol")
 exploded_df = exploded_df.select(col("symbol"), explode("parsed_data.`Time Series (Daily)`").alias("date", "data"))
 df_flat = exploded_df.select(
@@ -118,7 +126,7 @@ final_df = enriched_df.select(
     "is_bearish_day",
     "daily_return"
 )
-# final_df.show()
+final_df.show()
 # Load Processed Data into landing table
 final_df.write \
     .format("jdbc") \

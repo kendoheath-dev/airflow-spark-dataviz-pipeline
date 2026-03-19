@@ -6,4 +6,4 @@ ENV AIRFLOW_HOME=/opt/airflow
 RUN pip install --upgrade pip && \
     # pip install apache-airflow-providers-apache-spark && \
     pip install apache-airflow-providers-apache-livy && \ 
-    pip install psycopg2-binary
+    pip install psycopg2-binary 

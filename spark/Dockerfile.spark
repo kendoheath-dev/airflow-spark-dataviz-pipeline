@@ -1,11 +1,11 @@
-FROM bitnami/spark:3.5.6
-WORKDIR /opt/bitnami/spark
+FROM apache/spark:4.0.0-preview3-python3
+WORKDIR /opt/spark
 
-USER root
-RUN apt-get update && apt-get install -y wget
+# added ADD statement below 02-5-26
+ADD https://jdbc.postgresql.org/download/postgresql-42.7.3.jar /opt/spark/jars
+CMD ["tail", "-f", "/dev/null"]
+
+# USER root
+# RUN apt-get update && apt-get install -y wget
 # non root user
-USER 1001 
-
-
-
-
+# USER 1001 
